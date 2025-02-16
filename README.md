@@ -1,1 +1,1 @@
-# Currency Coverter Project cuz im bored 
+# Currency Converter Project cuz im bored 
