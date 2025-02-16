@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .search-box {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .last-updated {
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+    <script>
+        async function convertCurrency() {
+            let amount = document.getElementById("amount").value;
+            let fromCurrency = document.getElementById("fromCurrency").value;
+            let toCurrency = document.getElementById("toCurrency").value;
+            
+            if (!amount) {
+                document.getElementById("result").innerText = "Please enter an amount";
+                return;
+            }
+            
+            try {
+                let response = await fetch(`https://api.exchangerate-api.com/v4/latest/${fromCurrency}`);
+                let data = await response.json();
+                let rate = data.rates[toCurrency];
+                let convertedAmount = (amount * rate).toFixed(2);
+                document.getElementById("result").innerText = `Converted Amount: ${convertedAmount} ${toCurrency}`;
+                document.getElementById("lastUpdated").innerText = `Last Updated: ${data.date}`;
+                fetchHistoricalRates(fromCurrency, toCurrency);
+            } catch (error) {
+                document.getElementById("result").innerText = "Error fetching exchange rates";
+            }
+        }
+
+        async function loadCurrencies() {
+            try {
+                let response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+                let data = await response.json();
+                let currencies = Object.keys(data.rates);
+                populateDropdowns(currencies);
+                document.getElementById("lastUpdated").innerText = `Last Updated: ${data.date}`;
+            } catch (error) {
+                console.error("Error loading currencies", error);
+            }
+        }
+
+        function populateDropdowns(currencies) {
+            let dropdowns = document.querySelectorAll("select");
+            dropdowns.forEach(dropdown => {
+                dropdown.innerHTML = "";
+                currencies.forEach(currency => {
+                    let option = document.createElement("option");
+                    option.value = currency;
+                    option.textContent = currency;
+                    dropdown.appendChild(option);
+                });
+            });
+        }
+
+        function filterCurrencies(inputId, dropdownId) {
+            let input = document.getElementById(inputId).value.toUpperCase();
+            let dropdown = document.getElementById(dropdownId);
+            let options = dropdown.getElementsByTagName("option");
+            for (let i = 0; i < options.length; i++) {
+                let txtValue = options[i].textContent || options[i].innerText;
+                options[i].style.display = txtValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
+            }
+        }
+
+        async function fetchHistoricalRates(fromCurrency, toCurrency) {
+            try {
+                let response = await fetch(`https://api.exchangerate-api.com/v4/history/${fromCurrency}`);
+                let data = await response.json();
+                let labels = Object.keys(data.rates).slice(-10);
+                let values = labels.map(date => data.rates[date][toCurrency]);
+                updateChart(labels, values, toCurrency);
+            } catch (error) {
+                console.error("Error fetching historical rates", error);
+            }
+        }
+
+        function updateChart(labels, values, currency) {
+            let ctx = document.getElementById("rateChart").getContext("2d");
+            if (window.myChart) {
+                window.myChart.destroy();
+            }
+            window.myChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `Exchange Rate (${currency})`,
+                        data: values,
+                        borderColor: "#28a745",
+                        fill: false
+                    }]
+                }
+            });
+        }
+
+        window.onload = loadCurrencies;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Currency Converter</h2>
+        <input type="number" id="amount" placeholder="Enter amount">
+        <input type="text" id="searchFrom" class="search-box" onkeyup="filterCurrencies('searchFrom', 'fromCurrency')" placeholder="Search currency">
+        <select id="fromCurrency"></select>
+        <input type="text" id="searchTo" class="search-box" onkeyup="filterCurrencies('searchTo', 'toCurrency')" placeholder="Search currency">
+        <select id="toCurrency"></select>
+        <button onclick="convertCurrency()">Convert</button>
+        <p id="result">Converted Amount: </p>
+        <p id="lastUpdated" class="last-updated"></p>
+        <canvas id="rateChart"></canvas>
+    </div>
+</body>
+</html>
