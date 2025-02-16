@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Currency Converter</h2>
+        <input type="number" id="amount" placeholder="Enter amount">
+        <input type="text" id="searchFrom" class="search-box" onkeyup="filterCurrencies('searchFrom', 'fromCurrency')" placeholder="Search currency">
+        <select id="fromCurrency"></select>
+        <input type="text" id="searchTo" class="search-box" onkeyup="filterCurrencies('searchTo', 'toCurrency')" placeholder="Search currency">
+        <select id="toCurrency"></select>
+        <button onclick="convertCurrency()">Convert</button>
+        <p id="result">Converted Amount: </p>
+        <p id="lastUpdated" class="last-updated"></p>
+        <canvas id="rateChart"></canvas>
+    </div>
+</body>
+</html>
